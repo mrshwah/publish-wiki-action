@@ -1,0 +1,16 @@
+name: 'Wiki Publisher'
+description: 'Publishes documentation to GitHub Wiki including images'
+inputs:
+  docs-folder:
+    description: 'Path to the documentation folder'
+    required: true
+    default: 'docs'
+  github-token:
+    description: 'GitHub token for authentication'
+    required: true
+branding:
+  icon: 'book'
+  color: 'blue'
+runs:
+  using: 'node20'
+  main: 'dist/index.js' 
