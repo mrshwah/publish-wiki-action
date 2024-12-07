@@ -1,5 +1,5 @@
 name: 'Wiki Publisher'
-description: 'Publishes documentation to GitHub Wiki including images'
+description: 'Publishes documentation to GitHub Wiki'
 inputs:
   docs-folder:
     description: 'Path to the documentation folder'

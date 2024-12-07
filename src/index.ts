@@ -13,7 +13,20 @@ async function run(): Promise<void> {
 
     // Clone the wiki repository
     const wikiUrl = `https://x-access-token:${token}@github.com/${context.repo.owner}/${context.repo.repo}.wiki.git`;
-    await exec("git", ["clone", wikiUrl, "wiki-repo"]);
+
+    try {
+      await exec("git", ["clone", wikiUrl, "wiki-repo"]);
+    } catch (error) {
+      core.setFailed(
+        "Failed to clone wiki repository. Please make sure:\n" +
+          "1. Wiki is enabled in your repository settings (Settings -> Features -> Wikis)\n" +
+          "2. You have created the first wiki page (Home page) in your repository\n" +
+          "3. The GITHUB_TOKEN has sufficient permissions\n\n" +
+          "Error details: " +
+          error
+      );
+      return;
+    }
 
     // Get all markdown and image files
     const markdownFiles = await glob(`${docsFolder}/**/*.md`);
