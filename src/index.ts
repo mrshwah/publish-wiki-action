@@ -11,11 +11,17 @@ async function run(): Promise<void> {
     const token = core.getInput("github-token", { required: true });
     const context = github.context;
 
+    // Log initial configuration
+    core.info(`Starting wiki publisher with docs folder: ${docsFolder}`);
+    core.info(`Repository: ${context.repo.owner}/${context.repo.repo}`);
+
     // Clone the wiki repository
     const wikiUrl = `https://x-access-token:${token}@github.com/${context.repo.owner}/${context.repo.repo}.wiki.git`;
 
     try {
+      core.info("Cloning wiki repository...");
       await exec("git", ["clone", wikiUrl, "wiki-repo"]);
+      core.info("Successfully cloned wiki repository");
     } catch (error) {
       core.setFailed(
         "Failed to clone wiki repository. Please make sure:\n" +
@@ -29,42 +35,53 @@ async function run(): Promise<void> {
     }
 
     // Get all markdown and image files
+    core.info("Searching for markdown and image files...");
     const markdownFiles = await glob(`${docsFolder}/**/*.md`);
     const imageFiles = await glob(`${docsFolder}/**/*.{png,jpg,jpeg,gif,svg}`);
 
-    core.debug(`Found ${markdownFiles.length} markdown files`);
-    core.debug(`Found ${imageFiles.length} image files`);
+    core.info(`Found ${markdownFiles.length} markdown files:`);
+    markdownFiles.forEach((file) => core.info(`  - ${file}`));
+
+    core.info(`Found ${imageFiles.length} image files:`);
+    imageFiles.forEach((file) => core.info(`  - ${file}`));
 
     // Copy images to wiki repository
+    core.info("Copying images to wiki repository...");
     for (const imagePath of imageFiles) {
       const relativePath = path.relative(docsFolder, imagePath);
       const destPath = path.join("wiki-repo", relativePath);
-
+      core.info(`Copying ${imagePath} to ${destPath}`);
       await fs.mkdir(path.dirname(destPath), { recursive: true });
       await fs.copyFile(imagePath, destPath);
     }
 
     // Process and copy markdown files
+    core.info("Processing markdown files...");
     for (const mdFile of markdownFiles) {
       const relativePath = path.relative(docsFolder, mdFile);
       const destPath = path.join("wiki-repo", relativePath);
 
+      core.info(`Processing ${mdFile}:`);
+      core.info(`  Relative path: ${relativePath}`);
+      core.info(`  Destination: ${destPath}`);
+
       let content = await fs.readFile(mdFile, "utf8");
 
-      // Add debug logging
-      core.debug(`Processing file: ${mdFile}`);
-      core.debug(`Original content: ${content}`);
+      core.info("Original content sample:");
+      core.info(content.substring(0, 200) + "...");
 
       // Update image links to use wiki format
       content = updateImageLinks(content, docsFolder);
 
-      core.debug(`Updated content: ${content}`);
+      core.info("Updated content sample:");
+      core.info(content.substring(0, 200) + "...");
 
       await fs.mkdir(path.dirname(destPath), { recursive: true });
       await fs.writeFile(destPath, content);
     }
 
     // Commit and push changes
+    core.info("Committing changes to wiki...");
     await exec("git", ["-C", "wiki-repo", "add", "."]);
 
     // Check if there are any changes
@@ -74,10 +91,14 @@ async function run(): Promise<void> {
       "status",
       "--porcelain",
     ]);
+
     if (!stdout) {
       core.info("No changes to commit to wiki");
       return;
     }
+
+    core.info("Changes detected, committing...");
+    core.info(`Git status output: ${stdout}`);
 
     await exec("git", [
       "-C",
@@ -100,10 +121,13 @@ async function run(): Promise<void> {
       "-m",
       "Update wiki content",
     ]);
+
+    core.info("Pushing changes to wiki...");
     await exec("git", ["-C", "wiki-repo", "push"]);
+    core.info("Successfully updated wiki!");
   } catch (error) {
     if (error instanceof Error) {
-      core.setFailed(error.message);
+      core.setFailed(`Action failed: ${error.message}`);
     }
   }
 }
