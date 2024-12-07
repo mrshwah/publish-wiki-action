@@ -39,9 +39,9 @@ describe("Wiki Publisher", () => {
 
   it("should not modify external image links", () => {
     const content = "![External Image](https://example.com/image.png)";
-    const relativePath = "docs";
+    const replacePath = "docs";
 
-    const result = updateImageLinks(content, relativePath);
+    const result = updateImageLinks(content, replacePath);
     expect(result).toBe(content);
   });
 

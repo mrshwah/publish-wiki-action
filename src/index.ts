@@ -3,7 +3,7 @@ import * as github from "@actions/github";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { glob } from "glob";
-import { exec as execCallback } from "@actions/exec";
+import { exec as execCallback, getExecOutput } from "@actions/exec";
 
 async function run(): Promise<void> {
   try {
@@ -48,8 +48,14 @@ async function run(): Promise<void> {
 
       let content = await fs.readFile(mdFile, "utf8");
 
+      // Add debug logging
+      core.debug(`Processing file: ${mdFile}`);
+      core.debug(`Original content: ${content}`);
+
       // Update image links to use wiki format
       content = updateImageLinks(content, docsFolder);
+
+      core.debug(`Updated content: ${content}`);
 
       await fs.mkdir(path.dirname(destPath), { recursive: true });
       await fs.writeFile(destPath, content);
@@ -57,6 +63,19 @@ async function run(): Promise<void> {
 
     // Commit and push changes
     await exec("git", ["-C", "wiki-repo", "add", "."]);
+
+    // Check if there are any changes
+    const { stdout } = await getExecOutput("git", [
+      "-C",
+      "wiki-repo",
+      "status",
+      "--porcelain",
+    ]);
+    if (!stdout) {
+      core.info("No changes to commit to wiki");
+      return;
+    }
+
     await exec("git", [
       "-C",
       "wiki-repo",
@@ -87,6 +106,9 @@ async function run(): Promise<void> {
 }
 
 function updateImageLinks(content: string, replacePath: string): string {
+  // Escape any special RegExp characters in the replacePath
+  const escapedPath = replacePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
   // Update image markdown links to use correct wiki paths
   return content.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, imagePath) => {
     if (imagePath.startsWith("http")) {
@@ -94,8 +116,10 @@ function updateImageLinks(content: string, replacePath: string): string {
     }
 
     const cleanPath = imagePath
-      .replace(/^\/+/, "")
-      .replace(new RegExp(`^${replacePath}\/`), "");
+      .replace(/^\/+/, "") // Remove leading slashes
+      .replace(new RegExp(`^${escapedPath}/?`), "") // Remove replacePath and optional trailing slash
+      .replace(new RegExp(`^/?${escapedPath}/?`), ""); // Also try with optional leading slash
+
     return `![${alt}](${cleanPath})`;
   });
 }
