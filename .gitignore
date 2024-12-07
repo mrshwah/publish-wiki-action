@@ -1,11 +1,6 @@
 # Dependencies
 node_modules/
 
-# Build outputs
-dist/
-lib/
-build/
-
 # IDE and editor files
 .idea/
 .vscode/
