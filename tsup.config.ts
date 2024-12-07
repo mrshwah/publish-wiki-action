@@ -9,7 +9,7 @@ export default defineConfig({
   clean: true,
   minify: true,
   treeshake: true,
-  external: ["@actions/core", "@actions/exec", "@actions/github", "glob"],
+  noExternal: [/.*/],
   platform: "node",
   target: "node20",
 });
