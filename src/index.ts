@@ -49,7 +49,7 @@ async function run(): Promise<void> {
       let content = await fs.readFile(mdFile, "utf8");
 
       // Update image links to use wiki format
-      content = updateImageLinks(content, path.dirname(relativePath));
+      content = updateImageLinks(content, docsFolder);
 
       await fs.mkdir(path.dirname(destPath), { recursive: true });
       await fs.writeFile(destPath, content);
@@ -86,15 +86,17 @@ async function run(): Promise<void> {
   }
 }
 
-function updateImageLinks(content: string, relativePath: string): string {
+function updateImageLinks(content: string, replacePath: string): string {
   // Update image markdown links to use correct wiki paths
   return content.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, imagePath) => {
     if (imagePath.startsWith("http")) {
       return match; // Don't modify external URLs
     }
 
-    const newPath = path.join(relativePath, imagePath);
-    return `![${alt}](${newPath})`;
+    const cleanPath = imagePath
+      .replace(/^\/+/, "")
+      .replace(new RegExp(`^${replacePath}\/`), "");
+    return `![${alt}](${cleanPath})`;
   });
 }
 
