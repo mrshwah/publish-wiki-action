@@ -32,6 +32,9 @@ async function run(): Promise<void> {
     const markdownFiles = await glob(`${docsFolder}/**/*.md`);
     const imageFiles = await glob(`${docsFolder}/**/*.{png,jpg,jpeg,gif,svg}`);
 
+    core.debug(`Found ${markdownFiles.length} markdown files`);
+    core.debug(`Found ${imageFiles.length} image files`);
+
     // Copy images to wiki repository
     for (const imagePath of imageFiles) {
       const relativePath = path.relative(docsFolder, imagePath);
