@@ -50,7 +50,6 @@ async function run(): Promise<void> {
     for (const imagePath of imageFiles) {
       const relativePath = path.relative(docsFolder, imagePath);
       const destPath = path.join("wiki-repo", relativePath);
-      core.info(`Copying ${imagePath} to ${destPath}`);
       await fs.mkdir(path.dirname(destPath), { recursive: true });
       await fs.copyFile(imagePath, destPath);
     }
@@ -61,20 +60,10 @@ async function run(): Promise<void> {
       const relativePath = path.relative(docsFolder, mdFile);
       const destPath = path.join("wiki-repo", relativePath);
 
-      core.info(`Processing ${mdFile}:`);
-      core.info(`  Relative path: ${relativePath}`);
-      core.info(`  Destination: ${destPath}`);
-
       let content = await fs.readFile(mdFile, "utf8");
-
-      core.info("Original content sample:");
-      core.info(content.substring(0, 200) + "...");
 
       // Update image links to use wiki format
       content = updateImageLinks(content, docsFolder);
-
-      core.info("Updated content sample:");
-      core.info(content.substring(0, 200) + "...");
 
       await fs.mkdir(path.dirname(destPath), { recursive: true });
       await fs.writeFile(destPath, content);
