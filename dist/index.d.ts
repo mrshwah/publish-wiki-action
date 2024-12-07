@@ -1,3 +1,3 @@
-declare function updateImageLinks(content: string, relativePath: string): string;
+declare function updateImageLinks(content: string, replacePath: string): string;
 
 export { updateImageLinks };
